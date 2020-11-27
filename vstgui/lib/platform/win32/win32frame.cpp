@@ -459,6 +459,7 @@ SharedPointer<IPlatformTextEdit> Win32Frame::createPlatformTextEdit (IPlatformTe
 //-----------------------------------------------------------------------------
 SharedPointer<IPlatformOptionMenu> Win32Frame::createPlatformOptionMenu ()
 {
+	inPopup = true;
 	return owned<IPlatformOptionMenu> (new Win32OptionMenu (windowHandle));
 }
 
@@ -876,9 +877,14 @@ LONG_PTR WINAPI Win32Frame::proc (HWND hwnd, UINT message, WPARAM wParam, LPARAM
 			if (isTouchActive)
 				buttons |= kTouch;
 
-			// Win32OptionMenu::popup does ClientToScreen for TrackPopupMenu, must do the opposite for MouseUp.
 			POINT p{ GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam) };
-			ScreenToClient(windowHandle, &p);
+			if (inPopup)
+			{
+				// Win32OptionMenu::popup does ClientToScreen for TrackPopupMenu, must do the opposite for MouseUp.
+				ScreenToClient(windowHandle, &p);
+				inPopup = false;
+			}
+
 			CPoint where(p.x, p.y);
 			pFrame->platformOnMouseUp (where, buttons);
 			ReleaseCapture ();
